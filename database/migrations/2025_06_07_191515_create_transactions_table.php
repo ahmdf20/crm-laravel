@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignUuid('column_id')->constrained();
             $table->foreignUuid('product_id')->nullable()->constrained();
             $table->foreignUuid('contact_id')->nullable()->constrained();
+            $table->foreignUuid('sector_id')->nullable()->constrained();
             $table->double('current_price')->nullable();
             $table->integer('qty')->nullable();
             $table->double('grand_total')->nullable();

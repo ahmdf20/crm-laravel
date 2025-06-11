@@ -8,10 +8,12 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Http\Requests\Product\StoreRequest as ProductStore;
+use Exception;
 use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
+    protected $message, $status;
     /**
      * Display a listing of the resource.
      */
@@ -36,16 +38,19 @@ class ProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ProductStore $request)
+    public function store(Request $request)
     {
-        DB::transaction(function() use($request) {
-            $validated = $request->validated();
-            $validated['slug'] = Str::slug($validated['name']);
-            Product::create($validated);
-        });
+        $validation = $request->validate([
+            "name" => ['required', 'string'],
+            "price" => ['required', 'numeric'],
+            "description" => ['nullable', 'string']
+        ]);
+        $product = Product::create($validation);
+        $this->message = $product ? "Berhasil membuat data produk!" : "Gagal membuat data produk!";
+        $this->status = $product ? 201 : 205;
         return response()->json([
-            "message" => "Berhasil menambahkan produk!"
-        ], 201);
+            "message" => $this->message
+        ], $this->status);
     }
 
     /**
@@ -72,7 +77,17 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        //
+        $validation = $request->validate([
+            "name" => ['sometimes', 'string'],
+            "price" => ['sometimes', 'numeric'],
+            "description" => ['nullable', 'string']
+        ]);
+        $is_updated = $product->updateOrFail($validation);
+        $this->message = $is_updated ? "Berhasil mengubah data produk!" : "Gagal mengubah data produk!";
+        $this->status = $is_updated ? 201 : 205;
+        return response()->json([
+            "message" => $this->message
+        ], $this->status);
     }
 
     /**
@@ -80,6 +95,20 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        //
+        DB::beginTransaction();
+        try {
+            if ($product->transactions()->exists()) {
+                new Exception("Gagal menghapus data produk!");
+            }
+            $product->delete();
+            DB::commit();
+            return response()->json([
+                "message" => "Berhasil menghapus data produk!"
+            ], 201);
+        } catch (Exception $ex) {
+            return response()->json([
+                "message" => $ex->getMessage()
+            ], 205);
+        }
     }
 }

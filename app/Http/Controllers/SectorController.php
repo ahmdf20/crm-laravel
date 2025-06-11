@@ -9,6 +9,8 @@ use Inertia\Response;
 
 class SectorController extends Controller
 {
+    protected $status, $message;
+
     /**
      * Display a listing of the resource.
      */
@@ -16,7 +18,7 @@ class SectorController extends Controller
     {
         return Inertia::render('sector/page', [
             "title" => "List Sektor",
-            "sectors" => Sector::all()
+            "sectors" => Sector::with(['contacts', 'transactions'])->get()
         ]);
     }
 
@@ -33,7 +35,15 @@ class SectorController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validation = $request->validate([
+            "name" => ['required', 'string'],
+        ]);
+        $sector = Sector::create($validation);
+        $this->message = $sector ? "Berhasil membuat data sektor!" : "Gagal membuat data sektor";
+        $this->status = $sector ? 201 : 205;
+        return response()->json([
+            "message" => $this->message
+        ], $this->status);
     }
 
     /**
@@ -57,7 +67,15 @@ class SectorController extends Controller
      */
     public function update(Request $request, Sector $sector)
     {
-        //
+        $validation = $request->validate([
+            "name" => ['required', 'string']
+        ]);
+        $is_updated = $sector->updateOrFail($validation);
+        $this->message = $is_updated ? "Berhasil mengubah data sektor!" : "Gagal mengubah data sektor!";
+        $this->status = $is_updated ? 201 : 205;
+        return response()->json([
+            "message" => $this->message
+        ], $this->status);
     }
 
     /**

@@ -51,4 +51,9 @@ class Transaction extends Model
     {
         return $this->belongsTo(Contact::class);
     }
+
+    public function sector(): BelongsTo
+    {
+        return $this->belongsTo(Sector::class);
+    }
 }
